@@ -45,32 +45,29 @@ body:
     id: remote_url
     attributes:
       label: Remote Repository URL
-      description: Provide the upstream remote repository URL
+      description: Required only if you selected **Remote** visibility
       placeholder: https://registry.npmjs.org/
     validations:
-      required: true
-    if: "visibility == 'Remote'"
+      required: false
 
   - type: textarea
     id: virtual_repos
     attributes:
       label: Repositories to Aggregate
-      description: List repositories to include in this virtual repo
+      description: Required only if you selected **Virtual** visibility
       placeholder: |
         - repo-a
         - repo-b
     validations:
-      required: true
-    if: "visibility == 'Virtual'"
+      required: false
 
   - type: textarea
     id: federation_targets
     attributes:
       label: Federation Targets
-      description: List JFrog instances to federate with
+      description: Required only if you selected **Federated** visibility
       placeholder: |
         - jfrog-node1.example.com
         - jfrog-node2.example.com
     validations:
-      required: true
-    if: "visibility == 'Federated'"
+      required: false
