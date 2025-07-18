@@ -25,13 +25,13 @@ jobs:
       - name: Install JFrog CLI
         run: curl -fL https://install-cli.jfrog.io | sh
 
-      - name: Add JFrog Connection with OIDC
-        run: |
-          jf c add $PROVIDER_NAME \
-            --url=$JF_URL \
-            --oidc-provider-name=$PROVIDER_NAME \
-            --oidc-token-id=$TOKEN_ID \
-            --interactive=false
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env: 
+          JF_URL: "https://trial174qib.jfrog.io"
+          JF_PROJECT: "https://trial174qib.jfrog.io/ui/admin/projects"
+        with:
+          oidc-provider-name: "github-jfrog"
 
       - name: Test connection
         run: jf rt ping
