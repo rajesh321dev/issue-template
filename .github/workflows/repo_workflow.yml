@@ -1,0 +1,64 @@
+name: 🛠️ Create JFrog Repo from Issue
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write  # Needed to comment on the issue
+
+jobs:
+  create-jfrog-repo:
+    if: github.event.issue.title == 'Create JFrog Repo'
+    runs-on: ubuntu-latest
+
+    env:
+      JF_URL: https://trial174qib.jfrog.io
+      PROVIDER_NAME: github-jfrog
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set Debug Mode
+        run: echo "JFROG_CLI_LOG_LEVEL=DEBUG" >> $GITHUB_ENV
+
+      - name: Install JFrog CLI
+        run: curl -fL https://install-cli.jfrog.io | sh
+
+      - name: Setup JFrog CLI with OIDC
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          oidc-provider-name: ${{ env.PROVIDER_NAME }}
+          jfrog-url: ${{ env.JF_URL }}
+
+      - name: Extract Repository Info from Issue
+        id: extract
+        run: |
+          echo "ISSUE_BODY<<EOF" >> $GITHUB_ENV
+          echo "${{ github.event.issue.body }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          REPO_NAME=$(echo "${{ github.event.issue.body }}" | grep -i "name:" | cut -d':' -f2 | xargs)
+          REPO_TYPE=$(echo "${{ github.event.issue.body }}" | grep -i "type:" | cut -d':' -f2 | xargs)
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+          echo "REPO_TYPE=$REPO_TYPE" >> $GITHUB_ENV
+
+      - name: Create Repository in JFrog
+        run: |
+          echo "Creating $REPO_TYPE repository: $REPO_NAME"
+          jf rt curl -XPUT /artifactory/api/repositories/$REPO_NAME -H "Content-Type: application/json" -d @- <<EOF
+          {
+            "rclass": "local",
+            "packageType": "$REPO_TYPE",
+            "description": "Repository created via GitHub Issue"
+          }
+          EOF
+
+      - name: Comment on Issue
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "✅ JFrog repository **$REPO_NAME** of type **$REPO_TYPE** created successfully!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
