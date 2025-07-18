@@ -1,38 +1,37 @@
-name: Test JFrog OIDC Connection
+name: Test JFrog OIDC
 
 on:
   push
 
 permissions:
-  id-token: write       # Required for OIDC
-  contents: read        # Required to checkout code
+  id-token: write
+  contents: read
 
 jobs:
-  verify-oidc:
+  jfrog-oidc:
     runs-on: ubuntu-latest
     env:
       JF_URL: https://trial174qib.jfrog.io
+      PROVIDER_NAME: github-jfrog
+      TOKEN_ID: GitHub
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Debug Logging
-        run: |
-          echo "JFROG_CLI_LOG_LEVEL=DEBUG" >> $GITHUB_ENV
+      - name: Set Debug Mode
+        run: echo "JFROG_CLI_LOG_LEVEL=DEBUG" >> $GITHUB_ENV
 
       - name: Install JFrog CLI
         run: curl -fL https://install-cli.jfrog.io | sh
 
-      - name: Verify JFrog CLI
-        run: jf --version
-
-      - name: Configure JFrog CLI with OIDC
+      - name: Add JFrog Connection with OIDC
         run: |
-          jf c add github-jfrog \
+          jf c add $PROVIDER_NAME \
             --url=$JF_URL \
-            --oidc-provider-name=github-jfrog \
+            --oidc-provider-name=$PROVIDER_NAME \
+            --oidc-token-id=$TOKEN_ID \
             --interactive=false
 
-      - name: Test Ping to JFrog
+      - name: Test connection
         run: jf rt ping
