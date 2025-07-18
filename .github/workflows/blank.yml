@@ -1,23 +1,36 @@
-name: Test JFrog OIDC Connection
+name: Test JFrog OIDC Connection with Debug
 
 on:
-  push
+  workflow_dispatch:
 
 permissions:
-  id-token: write       # Required for OIDC
-  contents: read        # Usually needed by setup-jfrog-cli
+  id-token: write       # Required for GitHub OIDC
+  contents: read        # Needed for actions/checkout or setup-jfrog-cli
 
 jobs:
   verify-oidc:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
       - name: Set up JFrog CLI with OIDC
+        id: setup-jfrog
         uses: jfrog/setup-jfrog-cli@v4
         with:
-          oidc-provider-name: test
+          oidc-provider-name: test        # Must match the name in JFrog OIDC setup
         env:
           JF_URL: https://trial174qib.jfrog.io
 
-      - name: Ping JFrog using JFrog CLI
+      - name: Ping JFrog (verify access)
         run: jf rt ping
+
+      - name: Show decoded GitHub OIDC token claims
+        run: |
+          echo "Fetching GitHub OIDC Token..."
+          TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL")
+          echo "$TOKEN" | jq
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ steps.setup-jfrog.outputs.id_token }}
+          ACTIONS_ID_TOKEN_REQUEST_URL: https://token.actions.githubusercontent.com/.well-known/openid-configuration
