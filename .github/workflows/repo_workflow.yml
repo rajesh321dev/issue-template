@@ -37,8 +37,13 @@ jobs:
       - name: Extract Repository Info from Issue Body
         id: extract
         run: |
-          ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
-          
+          echo "Reading issue body..."
+          ISSUE_BODY=$(jq -r '.issue.body' "$GITHUB_EVENT_PATH")
+
+          echo "Issue Body:"
+          echo "$ISSUE_BODY"
+
+          # Extract values from the structured GitHub Issue Form
           REPO_NAME=$(echo "$ISSUE_BODY" | grep -A1 "Repository Name" | tail -n1 | xargs)
           REPO_TYPE=$(echo "$ISSUE_BODY" | grep -A1 "Repository Type" | tail -n1 | xargs)
           REPO_VISIBILITY=$(echo "$ISSUE_BODY" | grep -A1 "Repository Visibility" | tail -n1 | xargs)
@@ -52,11 +57,10 @@ jobs:
           echo "Creating $REPO_VISIBILITY repository: $REPO_NAME ($REPO_TYPE)"
 
           if [ "$REPO_VISIBILITY" = "Pre-Built Setup" ]; then
-            echo "Pre-Built Setup selected. No repo will be created."
+            echo "Pre-Built Setup selected. Skipping actual repository creation."
             exit 0
           fi
 
-          # lowercase rclass for JFrog API
           RCLASS=$(echo "$REPO_VISIBILITY" | tr '[:upper:]' '[:lower:]')
 
           jf rt curl -XPOST /artifactory/api/repositories -H "Content-Type: application/json" -d @- <<EOF
