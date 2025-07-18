@@ -1,0 +1,23 @@
+name: Test JFrog OIDC Connection
+
+on:
+  push
+
+permissions:
+  id-token: write       # Required for OIDC
+  contents: read        # Usually needed by setup-jfrog-cli
+
+jobs:
+  verify-oidc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up JFrog CLI with OIDC
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          oidc-provider-name: test
+        env:
+          JF_URL: https://trial174qib.jfrog.io
+
+      - name: Ping JFrog using JFrog CLI
+        run: jf rt ping
