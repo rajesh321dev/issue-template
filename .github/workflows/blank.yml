@@ -1,35 +1,41 @@
-name: Test JFrog OIDC Connection with Debug
+name: JFrog OIDC Validation
 
 on:
   push
 
 permissions:
-  id-token: write       # Required for GitHub OIDC
-  contents: read        # For actions/checkout and general use
+  id-token: write
+  contents: read
 
 jobs:
-  verify-oidc:
+  validate-oidc:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JFrog CLI with OIDC
-        id: setup-jfrog
-        uses: jfrog/setup-jfrog-cli@v4
-        with:
-          oidc-provider-name: test               # Must match what you created in JFrog
-        env:
-          JF_URL: https://trial174qib.jfrog.io   # Your JFrog instance URL
-
-      - name: Ping JFrog (verify access)
-        run: jf rt ping
-
-      - name: Print GitHub OIDC Token Claims (Base64-decoded)
+      - name: Install JFrog CLI
         run: |
-          echo "🔍 Decoding OIDC token..."
-          TOKEN=$(curl -s -H "Authorization: Bearer $ID_TOKEN" https://token.actions.githubusercontent.com/.well-known/openid-configuration | jq)
-          echo "$TOKEN"
+          curl -fL https://install-cli.jfrog.io | sh
+          sudo mv jfrog /usr/local/bin/
+
+      - name: Enable JFrog CLI debug
+        run: echo "JFROG_CLI_LOG_LEVEL=DEBUG" >> $GITHUB_ENV
+
+      - name: Configure OIDC JFrog connection
         env:
-          ID_TOKEN: ${{ steps.setup-jfrog.outputs.id_token }}
+          JF_URL: https://trial174qib.jfrog.io
+        run: |
+          jfrog rt ping --url=$JF_URL --access-token=$(jfrog rt c show | jq -r .access_token)
+        continue-on-error: true
+
+      - name: JFrog OIDC Connect Test
+        env:
+          JF_URL: https://trial174qib.jfrog.io
+        run: |
+          jfrog config add oidc-server \
+            --url=$JF_URL \
+            --oidc-provider \
+            --interactive=false
+          
+          jfrog rt ping --server-id=oidc-server
