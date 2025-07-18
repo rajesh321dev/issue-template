@@ -1,19 +1,22 @@
 name: Create JFrog Repo
 description: Create a new JFrog repository
 title: "Create JFrog Repo"
+labels: [ "jfrog", "repo-request" ]
 body:
   - type: input
     id: name
     attributes:
       label: Repository Name
       description: Enter the name for the new repository
+      placeholder: example-repo-name
     validations:
       required: true
+
   - type: dropdown
     id: type
     attributes:
       label: Repository Type
-      description: Choose the package type
+      description: Choose the type of package repository to create
       options:
         - maven
         - npm
@@ -23,3 +26,51 @@ body:
         - pypi
     validations:
       required: true
+
+  - type: dropdown
+    id: visibility
+    attributes:
+      label: Repository Visibility / Class
+      description: Select the type of repository
+      options:
+        - Pre-Built Setup
+        - Local
+        - Remote
+        - Virtual
+        - Federated
+    validations:
+      required: true
+
+  - type: input
+    id: remote_url
+    attributes:
+      label: Remote Repository URL
+      description: Provide the upstream remote repository URL
+      placeholder: https://registry.npmjs.org/
+    validations:
+      required: true
+    if: "visibility == 'Remote'"
+
+  - type: textarea
+    id: virtual_repos
+    attributes:
+      label: Repositories to Aggregate
+      description: List repositories to include in this virtual repo
+      placeholder: |
+        - repo-a
+        - repo-b
+    validations:
+      required: true
+    if: "visibility == 'Virtual'"
+
+  - type: textarea
+    id: federation_targets
+    attributes:
+      label: Federation Targets
+      description: List JFrog instances to federate with
+      placeholder: |
+        - jfrog-node1.example.com
+        - jfrog-node2.example.com
+    validations:
+      required: true
+    if: "visibility == 'Federated'"
